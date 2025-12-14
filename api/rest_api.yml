@@ -1,0 +1,286 @@
+openapi: 3.0.0
+info:
+  version: "1.0.0"
+  title: API социальной сети для путешественников
+  description: Домашнее задания по курсу - [System Design](https://balun.courses/courses/system_design)
+
+externalDocs:
+  description: Проект на GitHub
+  url: https://github.com/normalisht/social_network_system_design
+
+tags:
+  - name: Посты
+  - name: Пользователи
+
+paths:
+  /posts:
+    get:
+      summary: Получить список постов
+      tags:
+        - Посты
+      parameters:
+        - $ref: '#/components/parameters/AuthorId'
+        - $ref: '#/components/parameters/PlaceId'
+      responses:
+        200:
+          description: Список постов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostList'
+    post:
+      summary: Создать пост
+      tags:
+        - Посты
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                place_id:
+                  type: string
+                  format: uuid
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        201:
+          description: Пост создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+  /posts/{id}:
+    get:
+      summary: Получить пост по id
+      tags:
+        - Посты
+      parameters:
+        - $ref: '#/components/parameters/UUID'
+      responses:
+        200:
+          description: Пост
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  place:
+                    $ref: '#/components/schemas/Place'
+                  author:
+                    $ref: '#/components/schemas/User'
+                  images:
+                    type: array
+                    items:
+                      type: string
+                  comment_counter:
+                    type: integer
+                  reaction_counter:
+                    type: integer
+  /posts/{id}/comments:
+    get:
+      summary: Получить комментарии к посту
+      tags:
+        - Посты
+      parameters:
+        - $ref: '#/components/parameters/UUID'
+      responses:
+        200:
+          description: Список комментариев к посту
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    author:
+                      $ref: '#/components/schemas/User'
+                    message:
+                      type: string
+                    create_at:
+                      type: string
+                      format: date-time
+    post:
+      summary: Добавить комментарий к посту
+      tags:
+        - Посты
+      parameters:
+        - $ref: '#/components/parameters/UUID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      responses:
+        201:
+          description: Комментарий добавлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+  /posts/{id}/reactions:
+    post:
+      summary: Добавить реакцию к посту
+      tags:
+        - Посты
+      parameters:
+        - $ref: '#/components/parameters/UUID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reaction:
+                  type: boolean
+                  description: true - лайк, false - дизлайк
+      responses:
+        201:
+          description: Реакция добавлена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+  /users/{id}:
+    get:
+      summary: Получить пользователя по id
+      tags:
+        - Пользователи
+      parameters:
+        - $ref: '#/components/parameters/UUID'
+      responses:
+        200:
+          description: Пользователь
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/{id}/subscriptions:
+    post:
+      summary: Подписаться на пользователя
+      tags:
+        - Пользователи
+      parameters:
+        - $ref: '#/components/parameters/UUID'
+      responses:
+        201:
+          description: Подписка оформлена
+    delete:
+      summary: Отписаться от пользователя
+      tags:
+        - Пользователи
+      parameters:
+        - $ref: '#/components/parameters/UUID'
+      responses:
+        204:
+          description: Подписка отменена
+  /users/{id}/feed:
+    get:
+      summary: Получить ленту постов пользователя
+      parameters:
+        - $ref: '#/components/parameters/PlaceId'
+      tags:
+        - Пользователи
+      responses:
+        200:
+          description: Лента постов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostList'
+components:
+  parameters:
+    UUID:
+      in: path
+      name: id
+      required: true
+      description: UUID
+      schema:
+        type: string
+        format: uuid
+    AuthorId:
+      in: query
+      name: author_id
+      required: false
+      description: Фильтр по автору
+      schema:
+        type: string
+        format: uuid
+    PlaceId:
+      in: query
+      name: place_id
+      required: false
+      description: Фильтр по месту
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    User:
+      type: object
+      description: Пользователь
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    Place:
+      type: object
+      description: Место путешествия
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        coordinates:
+          type: string
+    PostList:
+      description: Список постов
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          title:
+            type: string
+          preview_image:
+            type: string
+            format: uri
+          author:
+            $ref: '#/components/schemas/User'
