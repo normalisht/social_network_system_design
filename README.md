@@ -24,6 +24,7 @@
   - В ленте одновременно загружается 25 постов
   - Пользователь подписывается на других путешественников в среднем 1 раз в неделю
 - Есть сезонность. Летом отпуск берут чаще и больше путешествуют.
+- Коэффициент сезонности - 1.35
 - Хранение постов - всегда
 - Лимиты
   - Длина поста не более 3000 символов
@@ -61,14 +62,15 @@ user_id = 16B
 title = 30B
 description = 3000B
 place_id = 16B
+images = 8 * 1MB = 8MB
+
+info = 16B + 30B + 3000B + 16B = 3062B
+media = 8MB
 ```
 
-traffic = 8 * (30 + 3000 + 16 + 16) = 24KB/s
+info_traffic = 8 RPS * 3062 = 24KB/s
 
-image_traffic = RPS публикации * кол-во фото в посте * средний размер фото = 8 * 8 * 1MB = 8MB/s
-
-total_traffic = traffic + image_traffic = 8MB/s
-
+media_traffic = 8 RPS * 8MB = 64MB/s
 
 #### Просмотр поста (read)
 
@@ -78,9 +80,14 @@ title = 30B
 description = 3000B
 place_id = 16B
 images = 8MB
+
+info = 16B + 30B + 3000B + 16B = 3062B
+media = 8MB
 ```
 
-traffic = 695 RPS * 8MB = 5.5MB/s
+info_traffic = 695 RPS * 3062B = 2MB/s
+
+media_traffic = 695 RPS * 8MB = 5.5GB/s
 
 
 #### Оценка поста (write)
@@ -90,10 +97,10 @@ user_id = 16B
 port_id = 16B
 reaction = 1B
 
-total = 16 + 16 + 1 = 33B
+info = 16B + 16B + 1B = 33B
 ```
 
-traffic = 174 RPS * 33B = 5.5KB/s
+info_traffic = 174 RPS * 33B = 5.5KB/s
 
 
 #### Комментарий к посту (write)
@@ -103,11 +110,10 @@ user_id = 16B
 port_id = 16B
 message = 200B
 
-total = 16 + 16 + 200 = 232B
+info = 16B + 16B + 200B = 232B
 ```
 
-traffic = 70 RPS * 232B = 16KB/s
-
+info_traffic = 70 RPS * 232B = 16KB/s
 
 
 #### Просмотр списка постов (read)
@@ -118,12 +124,15 @@ user_id = 16B
 Список из 25 постов
 post_id = 16B
 title = 30B
+preview_image = 1MB
 
-total = 16 + 25 * 16 = 0.5MB
+info = 16B + 25 * (16B + 30B) = 1166B
+media = 25 * 1MB = 25MB
 ```
 
-traffic = 1158 RPS * 0.5MB = 579MB/s
+info_traffic = 1158 RPS * 1166B = 1.3MB/s
 
+media_traffic = 1158 RPS * 25MB = 28GB/s
 
 
 #### Подписка на пользователя (write)
@@ -132,10 +141,10 @@ traffic = 1158 RPS * 0.5MB = 579MB/s
 user_id = 16B
 author_id = 16B
 
-total = 16B + 16B = 32B
+info = 16B + 16B = 32B
 ```
 
-traffic = 17 RPS * 32B = 0.5KB/s
+info_traffic = 17 RPS * 32B = 0.5KB/s
 
 ### Число одновременных соединений
 Connections = 10 000 000 DAU * 0.1 = 1 000 000
