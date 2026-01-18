@@ -11,8 +11,50 @@ externalDocs:
 tags:
   - name: Посты
   - name: Пользователи
+  - name: Загрузки
 
 paths:
+  /files:
+    post:
+      summary: Загрузить файл
+      tags:
+        - Загрузки
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "201":
+          description: Файлы загружены
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        url:
+                          type: string
+                          format: uri
+        "400":
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /posts:
     get:
       summary: Получить список постов
@@ -21,8 +63,10 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AuthorId'
         - $ref: '#/components/parameters/PlaceId'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
       responses:
-        200:
+        "200":
           description: Список постов
           content:
             application/json:
@@ -34,7 +78,7 @@ paths:
         - Посты
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
@@ -45,13 +89,13 @@ paths:
                 place_id:
                   type: string
                   format: uuid
-                images:
+                file_ids:
                   type: array
                   items:
                     type: string
-                    format: binary
+                    format: uuid
       responses:
-        201:
+        "201":
           description: Пост создан
           content:
             application/json:
@@ -61,6 +105,12 @@ paths:
                   id:
                     type: string
                     format: uuid
+        "400":
+          description: Неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /posts/{id}:
     get:
       summary: Получить пост по id
@@ -69,7 +119,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UUID'
       responses:
-        200:
+        "200":
           description: Пост
           content:
             application/json:
@@ -95,6 +145,12 @@ paths:
                     type: integer
                   reaction_counter:
                     type: integer
+        "404":
+          description: Пост не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /posts/{id}/comments:
     get:
       summary: Получить комментарии к посту
@@ -102,26 +158,21 @@ paths:
         - Посты
       parameters:
         - $ref: '#/components/parameters/UUID'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
       responses:
-        200:
+        "200":
           description: Список комментариев к посту
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      format: uuid
-                    author:
-                      $ref: '#/components/schemas/User'
-                    message:
-                      type: string
-                    create_at:
-                      type: string
-                      format: date-time
+                $ref: '#/components/schemas/CommentList'
+        "404":
+          description: Пост не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       summary: Добавить комментарий к посту
       tags:
@@ -137,7 +188,7 @@ paths:
                 message:
                   type: string
       responses:
-        201:
+        "201":
           description: Комментарий добавлен
           content:
             application/json:
@@ -147,6 +198,18 @@ paths:
                   id:
                     type: string
                     format: uuid
+        "400":
+          description: Неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "404":
+          description: Пост не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /posts/{id}/reactions:
     post:
       summary: Добавить реакцию к посту
@@ -164,7 +227,7 @@ paths:
                   type: boolean
                   description: true - лайк, false - дизлайк
       responses:
-        201:
+        "201":
           description: Реакция добавлена
           content:
             application/json:
@@ -174,6 +237,18 @@ paths:
                   id:
                     type: string
                     format: uuid
+        "400":
+          description: Неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "404":
+          description: Пост не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /users/{id}:
     get:
       summary: Получить пользователя по id
@@ -182,12 +257,18 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UUID'
       responses:
-        200:
+        "200":
           description: Пользователь
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        "404":
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /users/{id}/subscriptions:
     post:
       summary: Подписаться на пользователя
@@ -196,8 +277,14 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UUID'
       responses:
-        201:
+        "201":
           description: Подписка оформлена
+        "404":
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       summary: Отписаться от пользователя
       tags:
@@ -205,22 +292,30 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UUID'
       responses:
-        204:
+        "204":
           description: Подписка отменена
   /users/{id}/feed:
     get:
       summary: Получить ленту постов пользователя
       parameters:
         - $ref: '#/components/parameters/PlaceId'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
       tags:
         - Пользователи
       responses:
-        200:
+        "200":
           description: Лента постов
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostList'
+        "404":
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   parameters:
     UUID:
@@ -247,7 +342,38 @@ components:
       schema:
         type: string
         format: uuid
+    Limit:
+      in: query
+      name: limit
+      required: false
+      description: Количество элементов на странице
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Offset:
+      in: query
+      name: offset
+      required: false
+      description: Смещение для пагинации
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
   schemas:
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Общее количество постов
+        has_next:
+          type: boolean
+          description: есть ли следующая страница
+        has_prev:
+          type: boolean
+          description: есть ли предыдущая страница
     User:
       type: object
       description: Пользователь
@@ -269,18 +395,53 @@ components:
         coordinates:
           type: string
     PostList:
-      description: Список постов
-      type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: string
-            format: uuid
-          title:
-            type: string
-          preview_image:
-            type: string
-            format: uri
-          author:
-            $ref: '#/components/schemas/User'
+      description: Список постов с пагинацией
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              title:
+                type: string
+              preview_image:
+                type: string
+                format: uri
+              author:
+                $ref: '#/components/schemas/User'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CommentList:
+      description: Список комментариев с пагинацией
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              author:
+                $ref: '#/components/schemas/User'
+              message:
+                type: string
+              create_at:
+                type: string
+                format: date-time
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    Error:
+      type: object
+      properties:
+        error_code:
+          type: integer
+          description: Код ошибки
+        message:
+          type: string
+          description: Описание ошибки
