@@ -148,3 +148,101 @@ info_traffic = 17 RPS * 32B = 0.5KB/s
 
 ### Число одновременных соединений
 Connections = 10 000 000 DAU * 0.1 = 1 000 000
+
+
+## Расчёт ресурсов
+
+Расчёт дисков производитя для 1 года хранения данных.
+
+### Параметры дисков
+
+| Характеристика                   | HDD      | SSD (SATA) | SSD (nVME) |
+|----------------------------------|----------|------------|------------|
+| Объем                            | до 32TB  | до 100TB   | до 30TB    |
+| Операции ввода-вывода в секунду  | 100      | 1 000      | 10 000     |
+| Пропускная способность           | 100 MB/s | 500 MB/s   | 3 GB/s     |
+
+### Посты
+
+Сapacity = 24 KB/s * 86 400 * 365 = 0.7 TB
+Ожидаемый трафик = публикация поста + просмотр поста + просмотр списка постов = 24KB/s + 2MB/s + 1.3MB/s = 3.3MB/s
+Ожидаемый RPS = 8 RPS + 695 RPS + 1158 RPS = 1861 RPS
+
+#### НDD
+Disks_for_capacity = 0.7 TB / 1 TB = 1 Disk
+Disks_for_throughput = 3.3 MB/s / 100 MB/s = 1 Disk
+Disks_for_iops = 1861 / 100 = 19 Disk
+Disks = max(1, 1, 19) = 19
+
+#### SSD (SATA) 
+Disks_for_capacity = 0.7 TB / 1 ТБ = 1 Disk
+Disks_for_throughput = 3.3 MB/s / 500 MB/s = 1 Disk
+Disks_for_iops = 1861 / 1000 = 2 Disk
+Disks = max(1, 1, 2) = 2
+
+
+#### Итого: выбираем конфигурацию с 2 SSD (SATA) по 500 GB
+
+
+### Комментарии
+
+Сapacity = 16 KB/s * 86 400 * 365 = 482GB
+Ожидаемый трафик = 16 KB/s
+Ожидаемый RPS = 70 RPS
+
+#### НDD
+Disks_for_capacity = 482 TB / 500 GB = 1 Disk
+Disks_for_throughput = 16 KB/s / 100 MB/s = 1 Disk
+Disks_for_iops = 70 / 100 = 1 Disk
+Disks = max(1, 1, 1) = 1
+
+#### Итого: достаточной конфигурацией является с 1 HDD на 500 GB
+
+
+### Реакции
+
+Сapacity = 5.5 KB/s * 86 400* 365 = 166 GB
+Ожидаемый трафик = 5.5 KB/s
+Ожидаемый RPS = 174 RPS
+
+#### НDD
+Disks_for_capacity = 166 GB / 250 GB = 1 Disk
+Disks_for_throughput = 5.5 KB/s / 100 MB/s = 1 Disk
+Disks_for_iops = 174 / 100 = 2 Disk
+Disks = max(1, 1, 2) = 2
+
+#### SSD (SATA) 
+Disks_for_capacity = 166 GB / 250 GB = 1 Disk
+Disks_for_throughput = 5.5 KB/s / 500 MB/s = 1 Disk
+Disks_for_iops = 174 / 1000 = 1 Disk
+Disks = max(1, 1, 1) = 1
+
+#### Итого: выбраем конфигурацию с 2 HDD на 250 GB
+
+
+### Медиа
+
+Сapacity = 64 MB/s * 86 400 * 365 = 2000 TB
+Ожидаемый трафик = 64 MB/s + 5.5 GB/s + 28 GB/s = 33.5 GB/s
+Ожидаемый RPS = 8 RPS + 695 RPS + 1158 RPS = 1861 RPS
+
+#### НDD
+Disks_for_capacity = 2000 TB / 32 TB = 63 Disk
+Disks_for_throughput = 33.5 GB/s / 100 MB/s = 344 Disk
+Disks_for_iops = 1861 / 100 = 19 Disk
+Disks = max(63, 344, 19) = 344
+
+#### SSD (SATA) 
+Disks_for_capacity = 2000 TB / 100 ТБ = 20 Disk
+Disks_for_throughput = 33.5 GB/s / 500 MB/s = 69 Disk
+Disks_for_iops = 1861 / 1000 = 2 Disk
+Disks = max(20, 69, 2) = 69
+
+#### SSD (nVME) 
+Disks_for_capacity = 2000 TB / 30 ТБ = 67 Disk
+Disks_for_throughput =  33.5 GB/s /  3 GB/s = 12 Disk
+Disks_for_iops = 1861 / 10000 = 1 Disk
+Disks = max(67, 12, 1) = 67
+
+#### Итого: выбраем конфигурацию с 67 SSD (nVME) на 30 TB
+Поскольку бюджет считается не ограниченым
